@@ -59,5 +59,3 @@ BEGIN
     RETURN similarity;
 END  SimCalculation;
 
-
-select * FROM mediaitems
