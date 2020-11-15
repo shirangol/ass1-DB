@@ -55,7 +55,7 @@ BEGIN
     SELECT PROD_YEAR INTO mid_1_year FROM MediaItems WHERE MID= mid_1;
     SELECT PROD_YEAR INTO mid_2_year FROM MediaItems WHERE MID= mid_2;    
     two_items_distance:= POWER((mid_1_year-mid_2_year),2);
-    similarity:= two_items_distance/ max_distance;
+    similarity:= 1-( two_items_distance/ max_distance);
     RETURN similarity;
 END  SimCalculation;
 
