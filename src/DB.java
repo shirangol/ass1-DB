@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DB {
     String userName;
@@ -57,12 +59,13 @@ public class DB {
 
     //Print titles of similarity mid (2.d)
     public void printSimilarItems(long mid){
-        ArrayList<Long> midSimilarity= getMYMidSimilarity(mid);
-        ArrayList<String> titles= getTitle(midSimilarity);
-
-        for (int i=0; i<titles.size();i++){
-            System.out.println(titles.get(i));
-        }
+        HashMap<Long,Float> midSimilarity= getMYMidSimilarity(mid);
+        HashMap<String,Float> titles= getTitle(midSimilarity);
+        //sort and print
+        titles.entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue())
+                .forEach(item->System.out.println(item.getKey()+ " " + item.getValue()));
     }
 
     //Insert to MediaItems table
@@ -153,20 +156,21 @@ public class DB {
     }
 
     //Get all MID for similarity at least 0.3
-    private ArrayList<Long> getMYMidSimilarity(long mid) {
-        ArrayList<Long> allMID= new ArrayList<>();
+    private  HashMap<Long,Float> getMYMidSimilarity(long mid) {
+        HashMap<Long,Float> allMID= new HashMap<Long, Float>();
         try {
-            PreparedStatement ps= this.conn.prepareStatement("select MID1,MID2,SIMILARITY from Similarity where (MID1= ? or MID2=?) and SIMILARITY>=0.3");
+            PreparedStatement ps= this.conn.prepareStatement("select MID1,MID2,SIMILARITY from Similarity where (MID1= ? or MID2=?) and SIMILARITY>=0.3 order by SIMILARITY ASC");
             ps.setLong(1,mid);
             ps.setLong(2,mid);
             ResultSet rs= ps.executeQuery();
             while(rs.next()){
                 long mid1=rs.getLong("MID1");
                 long mid2=rs.getLong("MID2");
+                float sim= rs.getFloat("SIMILARITY");
                 if(mid1==mid){
-                    allMID.add(mid2);
+                    allMID.put(mid2,sim);
                 }else {
-                    allMID.add(mid1);
+                    allMID.put(mid1,sim);
                 }
             }
             rs.close();
@@ -178,15 +182,15 @@ public class DB {
     }
 
     //Get titles array of all mid list
-    private ArrayList<String> getTitle(ArrayList<Long> mids){
-        ArrayList<String> titles= new ArrayList<>();
+    private HashMap<String,Float> getTitle(HashMap<Long,Float> mids){
+       HashMap<String,Float> titles= new HashMap<>();
         try {
-            for(long mid: mids){
+            for(Map.Entry mid: mids.entrySet()){
                 PreparedStatement ps= this.conn.prepareStatement("select TITLE from MediaItems where MID= ?");
-                ps.setLong(1,mid);
+                ps.setLong(1,(Long)(mid.getKey()));
                 ResultSet rs= ps.executeQuery();
                 while (rs.next()){
-                    titles.add(rs.getString("TITLE"));
+                    titles.put(rs.getString("TITLE"),(Float) mid.getValue());
                 }
                 rs.close();
                 ps.close();
