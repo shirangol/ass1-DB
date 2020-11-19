@@ -29,12 +29,18 @@ public class DB {
 
     //Read a csv file and insert to MediaItems table (2.b)
     public void fileToDataBase(String pathCSV){
+        if(conn==null){
+            try {
+                this.conn=DriverManager.getConnection(connectionURL,userName,password);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
         try (BufferedReader br = new BufferedReader(new FileReader(pathCSV))) {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] values = line.split(",");
                 insertToMediaItemsTable(values[0],Integer.parseInt(values[1]));
-                System.out.println(values[0]+" "+ values[1]);
             }
         }catch (Exception e){
             e.printStackTrace();
@@ -43,6 +49,13 @@ public class DB {
 
     //Calculate similarity of all pair of items and insert to Similarity table (2.c)
     public void calculateSimilarity(){
+        if(conn==null){
+            try {
+                this.conn=DriverManager.getConnection(connectionURL,userName,password);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
         ArrayList<Integer> allMID1= getAllMID();
         ArrayList<Integer> allMID2= getAllMID();
         int maxDistance= getMaxDistance();
@@ -51,7 +64,6 @@ public class DB {
                 int mid1=allMID1.get(i);
                 int mid2=allMID2.get(j);
                 float similarity= getSimilarity(mid1,mid2,maxDistance);
-                System.out.println("mid1:"+ mid1+"  mid2:"+mid2+ "  sim:"+ similarity);
                 insertToSimilarityTable(mid1,mid2,similarity);
             }
         }
@@ -59,6 +71,13 @@ public class DB {
 
     //Print titles of similarity mid (2.d)
     public void printSimilarItems(long mid){
+        if(conn==null){
+            try {
+                this.conn=DriverManager.getConnection(connectionURL,userName,password);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
         HashMap<Long,Float> midSimilarity= getMYMidSimilarity(mid);
         HashMap<String,Float> titles= getTitle(midSimilarity);
         //sort and print
