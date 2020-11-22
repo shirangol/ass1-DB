@@ -1,4 +1,5 @@
 import oracle.jdbc.OracleTypes;
+import oracle.jdbc.proxy.annotation.Pre;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -7,20 +8,19 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DB {
+public class Assigment {
     String userName;
     String password;
     String connectionURL;
     Connection conn;
 
     //Constructor for create connection to DB (2.a)
-    public DB( String connectionURL,  String username, String password){
+    public Assigment( String connectionURL,  String username, String password){
         this.userName=username;
         this.password=password;
         this.connectionURL=connectionURL;
         try {
             Class.forName("oracle.jdbc.driver.OracleDriver");
-//            String connectionURL="jdbc:oracle:thin:@ora1.ise.bgu.ac.il:1521/ORACLE";
             this.conn=DriverManager.getConnection(connectionURL,username,password);
         }catch (Exception e){
             e.printStackTrace();
@@ -142,9 +142,9 @@ public class DB {
         float similarity=0;
         try {
             CallableStatement cs= this.conn.prepareCall("{?=call SimCalculation(?,?,?)}");
-            cs.setInt(2,mid1);
-            cs.setInt(3,mid2);
-            cs.setInt(4,maxDistance);
+            cs.setLong(2,mid1);
+            cs.setLong(3,mid2);
+            cs.setFloat(4,maxDistance);
             cs.registerOutParameter(1, OracleTypes.FLOAT);
             cs.execute();
             similarity=cs.getFloat(1);
@@ -159,12 +159,33 @@ public class DB {
     //Insert to Similarity table
     private void insertToSimilarityTable(int mid1, int mid2, float similarity){
         try {
-            PreparedStatement ps= this.conn.prepareStatement("insert into Similarity (MID1,  MID2, SIMILARITY) values (?,?,?)");
-            ps.setInt(1, mid1);
-            ps.setInt(2,mid2);
-            ps.setFloat(3,similarity);
-            ps.executeUpdate();
-            ps.clearParameters();
+            PreparedStatement ps1= this.conn.prepareStatement("select * from Similarity where (MID1=? and MID2=?) or (MID1= ? and MID2=?)");
+            ps1.setLong(1, mid1);
+            ps1.setLong(2,mid2);
+            ps1.setLong(3, mid2);
+            ps1.setLong(4,mid1);
+            ResultSet rs= ps1.executeQuery();
+
+            PreparedStatement ps =null;
+            if(rs.next()){//checking if MID1+MID2 exists
+                ps= this.conn.prepareStatement("update Similarity set SIMILARITY=? where MID1=? and MID2=?");
+                ps.setLong(2, mid1);
+                ps.setLong(3,mid2);
+                ps.setFloat(1,similarity);
+                ps.executeUpdate();
+                ps.clearParameters();
+
+            }else{
+                ps= this.conn.prepareStatement("insert into Similarity (MID1,  MID2, SIMILARITY) values (?,?,?)");
+                ps.setLong(1, mid1);
+                ps.setLong(2,mid2);
+                ps.setFloat(3,similarity);
+                ps.executeUpdate();
+                ps.clearParameters();
+
+            }
+            ps1.close();
+            rs.close();
             ps.close();
             conn.commit();
 
@@ -202,7 +223,7 @@ public class DB {
 
     //Get titles array of all mid list
     private HashMap<String,Float> getTitle(HashMap<Long,Float> mids){
-       HashMap<String,Float> titles= new HashMap<>();
+        HashMap<String,Float> titles= new HashMap<>();
         try {
             for(Map.Entry mid: mids.entrySet()){
                 PreparedStatement ps= this.conn.prepareStatement("select TITLE from MediaItems where MID= ?");

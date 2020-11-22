@@ -30,7 +30,7 @@ BEGIN
     END IF;
     :new.TITLE_LENGTH:= LENGTH(:new.TITLE);
 END;
-
+/
 --1.d
 CREATE OR REPLACE FUNCTION MaximalDistance RETURN
 NUMBER IS
@@ -43,7 +43,7 @@ BEGIN
     max_distance:= POWER((max_year-min_year),2);
     RETURN max_distance;
 END  MaximalDistance;
-    
+/
 --1.e
 CREATE OR REPLACE FUNCTION SimCalculation(mid_1 NUMBER, mid_2 NUMBER, max_distance NUMBER) RETURN
 FLOAT IS
@@ -58,4 +58,4 @@ BEGIN
     similarity:= 1-( two_items_distance/ max_distance);
     RETURN similarity;
 END  SimCalculation;
-
+/
